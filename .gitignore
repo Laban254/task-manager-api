@@ -1,0 +1,34 @@
+# Go binary files
+/bin/
+/tmp/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Build artifacts
+*.out
+*.test
+*.prof
+*.log
+
+# Dependency directories
+/vendor/
+
+# IDE/editor specific files
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Environment variable files
+.env
+
+# Coverage files
+coverage.out
