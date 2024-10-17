@@ -3,22 +3,25 @@ package middleware
 
 import (
     "github.com/gin-gonic/gin"
+    "log"
+    "time"
 )
 
 // Logger is a middleware for logging requests
 func Logger() gin.HandlerFunc {
     return func(c *gin.Context) {
-        // Log the request details (this can be expanded)
-        c.Next()
+        start := time.Now()
+        c.Next() // Call the next handler
+        log.Printf("%s %s took %v", c.Request.Method, c.Request.URL, time.Since(start))
     }
 }
 
-// Recovery is a middleware for recovering from panics
+// Recovery from panics
 func Recovery() gin.HandlerFunc {
     return func(c *gin.Context) {
         defer func() {
             if err := recover(); err != nil {
-                // Handle the panic
+                log.Printf("Recovered from panic: %v", err)
                 c.JSON(500, gin.H{"error": "Internal Server Error"})
                 c.Abort()
             }

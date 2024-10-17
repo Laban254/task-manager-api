@@ -11,14 +11,22 @@ import (
     "task_management_api/pkg/models"
     "task_management_api/pkg/database"
     "task_management_api/config"
+    "github.com/go-playground/validator/v10"
 )
 
 var tasks []models.Task
 var cfg = config.LoadConfig() 
+var validate = validator.New()
 
 func RegisterUser(c *gin.Context) {
     var user models.User
     if err := c.ShouldBindJSON(&user); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+        return
+    }
+
+    // Validate user
+    if err := validate.Struct(user); err != nil {
         c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
         return
     }
@@ -38,6 +46,7 @@ func RegisterUser(c *gin.Context) {
     c.JSON(http.StatusOK, gin.H{"message": "User registered successfully"})
 }
 
+// LoginUser handles user login
 func LoginUser(c *gin.Context) {
     var loginData models.User
     if err := c.ShouldBindJSON(&loginData); err != nil {
@@ -100,6 +109,13 @@ func CreateTask(c *gin.Context) {
         c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
         return
     }
-    tasks = append(tasks, newTask) // Add the new task to the tasks slice
+
+    // Validate task (if needed, otherwise just use binding)
+    if err := validate.Struct(newTask); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+        return
+    }
+
+    tasks = append(tasks, newTask) 
     c.JSON(http.StatusCreated, newTask)
 }
