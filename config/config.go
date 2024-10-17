@@ -15,9 +15,9 @@ type Config struct {
     DBPassword string
     DBName     string
     DBPort     string
+    JWTSecret  string
 }
 
-// LoadConfig loads the configuration values from the .env file
 func LoadConfig() *Config {
     // Load environment variables from .env file
     err := godotenv.Load()
@@ -31,5 +31,6 @@ func LoadConfig() *Config {
         DBPassword: os.Getenv("DB_PASSWORD"),
         DBName:     os.Getenv("DB_NAME"),
         DBPort:     os.Getenv("DB_PORT"),
+        JWTSecret:  os.Getenv("JWT_SECRET"),
     }
 }
