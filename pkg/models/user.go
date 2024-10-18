@@ -1,9 +1,13 @@
-// /pkg/models/user.go
 package models
 
+import (
+    "gorm.io/gorm"
+)
+
 type User struct {
-    ID       uint   `json:"id" gorm:"primaryKey"`
-    Username string `json:"username" gorm:"unique;not null" binding:"required,min=3,max=20"` 
-    Password string `json:"password,omitempty" gorm:""`
-    Role     string `json:"role" gorm:"not null;default:'user'"`
+    gorm.Model
+    Username string    `json:"username" gorm:"unique;not null"`
+    Password string    `json:"password" gorm:"not null"`
+    Role     string    `json:"role" gorm:"default:'user'"`
+    Projects []Project  `json:"projects" gorm:"foreignKey:UserID"`
 }

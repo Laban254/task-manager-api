@@ -8,8 +8,7 @@ import (
 
 // MigrateDatabase performs the database migrations for all models
 func MigrateDatabase() {
-    // Automatically create/update the users table based on the User model
-    if err := DB.AutoMigrate(&models.User{}); err != nil {
+    if err := DB.AutoMigrate(&models.User{}, &models.Project{}, &models.Task{}); err != nil {
         log.Fatalf("Failed to migrate database: %v", err)
     }
     log.Println("Database migration completed")
