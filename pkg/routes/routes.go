@@ -16,11 +16,13 @@ func SetupRouter() *gin.Engine {
     router.Use(middleware.Recovery())  
 
     // routes
-    router.POST("/register", handlers.RegisterUser)
-    router.POST("/login", handlers.LoginUser)
+    router.POST("/auth/register", handlers.RegisterUser)
+    router.POST("/auth/login", handlers.LoginUser)
     router.GET("/projects", handlers.GetProjects)
     router.GET("/tasks", handlers.GetTasks)
     router.POST("/tasks", handlers.CreateTask)
+    router.GET("/auth/google/login", handlers.GoogleLogin)
+    router.GET("/auth/google/callback", handlers.GoogleCallback)
 
     return router
 }

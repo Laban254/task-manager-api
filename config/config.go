@@ -16,6 +16,10 @@ type Config struct {
     DBName     string
     DBPort     string
     JWTSecret  string
+    GOOGLE_CLIENT_ID string
+    GOOGLE_CLIENT_SECRET string
+    GOOGLE_REDIRECT_URL string
+
 }
 
 func LoadConfig() *Config {
@@ -32,5 +36,8 @@ func LoadConfig() *Config {
         DBName:     os.Getenv("DB_NAME"),
         DBPort:     os.Getenv("DB_PORT"),
         JWTSecret:  os.Getenv("JWT_SECRET"),
+        GOOGLE_CLIENT_ID:  os.Getenv("GOOGLE_CLIENT_ID"),
+        GOOGLE_CLIENT_SECRET:  os.Getenv("GOOGLE_CLIENT_SECRET"),
+        GOOGLE_REDIRECT_URL:  os.Getenv("GOOGLE_REDIRECT_URL"), 
     }
 }
