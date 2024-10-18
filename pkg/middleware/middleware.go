@@ -11,7 +11,7 @@ import (
 func Logger() gin.HandlerFunc {
     return func(c *gin.Context) {
         start := time.Now()
-        c.Next() // Call the next handler
+        c.Next()
         log.Printf("%s %s took %v", c.Request.Method, c.Request.URL, time.Since(start))
     }
 }

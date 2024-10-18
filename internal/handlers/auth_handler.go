@@ -15,10 +15,8 @@ import (
     "golang.org/x/crypto/bcrypt"
     "task_management_api/pkg/models"
     "task_management_api/pkg/database"
-    "task_management_api/config"
 )
-
-var cfg = config.LoadConfig() 
+ 
 
 var googleOauthConfig = &oauth2.Config{
     ClientID:     cfg.GOOGLE_CLIENT_ID,
@@ -54,13 +52,14 @@ func RegisterUser(c *gin.Context) {
     user.Password = hashedPassword
 
     if err := database.DB.Create(&user).Error; err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "User already exists"})
+        c.JSON(http.StatusConflict, gin.H{"error": "User already exists"})
         return
     }
 
-    c.JSON(http.StatusOK, gin.H{"message": "User registered successfully"})
+    c.JSON(http.StatusCreated, gin.H{"message": "User registered successfully"})
 }
 
+// LoginUser handles user login
 func LoginUser(c *gin.Context) {
     var loginData models.User
     if err := c.ShouldBindJSON(&loginData); err != nil {
@@ -79,15 +78,16 @@ func LoginUser(c *gin.Context) {
         return
     }
 
-    token := generateToken(user.Username)
+    token := generateToken(user.Username, user.Role)
     c.JSON(http.StatusOK, gin.H{"token": token})
 }
-
+// GoogleLogin redirects to Google OAuth
 func GoogleLogin(c *gin.Context) {
     url := googleOauthConfig.AuthCodeURL("state", oauth2.AccessTypeOffline)
     c.Redirect(http.StatusTemporaryRedirect, url)
 }
 
+// GoogleCallback handles the callback from Google OAuth
 func GoogleCallback(c *gin.Context) {
     code := c.Query("code")
     if code == "" {
@@ -123,6 +123,7 @@ func GoogleCallback(c *gin.Context) {
         user = models.User{
             Username: googleUser.Email,
             Password: "", 
+            Role:     "user", 
         }
 
         if err := database.DB.Create(&user).Error; err != nil {
@@ -131,14 +132,16 @@ func GoogleCallback(c *gin.Context) {
         }
     }
 
-    tokenString := generateToken(user.Username)
+    tokenString := generateToken(user.Username, user.Role)
 
     c.JSON(http.StatusOK, gin.H{"token": tokenString, "user": googleUser})
 }
 
-func generateToken(username string) string {
+
+func generateToken(username string, role string) string {
     claims := jwt.MapClaims{
         "username": username,
+        "role":     role,
         "exp":      time.Now().Add(time.Hour * 72).Unix(),
     }
     token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -146,6 +149,8 @@ func generateToken(username string) string {
     return tokenString
 }
 
+
+// hashPassword hashes the user's password
 func hashPassword(password string) (string, error) {
     hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
     if err != nil {
@@ -154,7 +159,52 @@ func hashPassword(password string) (string, error) {
     return string(hashedPassword), nil
 }
 
+// checkPasswordHash compares the password with the hashed password
 func checkPasswordHash(password, hashedPassword string) bool {
     err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
     return err == nil
+}
+
+// AdminRegisterUser handles admin registration of new users
+func AdminRegisterUser(c *gin.Context) {
+    var user models.User
+    if err := c.ShouldBindJSON(&user); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+        return
+    }
+
+    trimmedPassword := strings.TrimSpace(user.Password)
+    if trimmedPassword == "" || len(trimmedPassword) < 6 {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Password must be at least 6 characters long"})
+        return
+    }
+
+    if user.Role == "" {
+        user.Role = "admin" 
+    }
+
+    if err := validate.Struct(user); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+        return
+    }
+
+    hashedPassword, err := hashPassword(trimmedPassword)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
+        return
+    }
+    user.Password = hashedPassword
+
+    var existingUser models.User
+    if err := database.DB.Where("username = ?", user.Username).First(&existingUser).Error; err == nil {
+        c.JSON(http.StatusConflict, gin.H{"error": "User already exists"})
+        return
+    }
+
+    if err := database.DB.Create(&user).Error; err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{"message": "User registered successfully"})
 }

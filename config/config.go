@@ -19,6 +19,8 @@ type Config struct {
     GOOGLE_CLIENT_ID string
     GOOGLE_CLIENT_SECRET string
     GOOGLE_REDIRECT_URL string
+    ADMIN_USERNAME string
+    ADMIN_PASSWORD string
 
 }
 
@@ -39,5 +41,7 @@ func LoadConfig() *Config {
         GOOGLE_CLIENT_ID:  os.Getenv("GOOGLE_CLIENT_ID"),
         GOOGLE_CLIENT_SECRET:  os.Getenv("GOOGLE_CLIENT_SECRET"),
         GOOGLE_REDIRECT_URL:  os.Getenv("GOOGLE_REDIRECT_URL"), 
+        ADMIN_USERNAME:  os.Getenv("ADMIN_USERNAME"), 
+        ADMIN_PASSWORD:   os.Getenv("ADMIN_PASSWORD"), 
     }
 }

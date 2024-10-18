@@ -15,14 +15,26 @@ func SetupRouter() *gin.Engine {
     router.Use(middleware.Logger())    
     router.Use(middleware.Recovery())  
 
-    // routes
+    // Auth routes
     router.POST("/auth/register", handlers.RegisterUser)
     router.POST("/auth/login", handlers.LoginUser)
-    router.GET("/projects", handlers.GetProjects)
-    router.GET("/tasks", handlers.GetTasks)
-    router.POST("/tasks", handlers.CreateTask)
     router.GET("/auth/google/login", handlers.GoogleLogin)
     router.GET("/auth/google/callback", handlers.GoogleCallback)
+
+    // Protected routes for authenticated users
+    protectedRoutes := router.Group("/api")
+    protectedRoutes.Use(middleware.AuthMiddleware("user"))
+
+    // Project and Task routes (available to authenticated users)
+    protectedRoutes.GET("/projects", handlers.GetProjects)
+    protectedRoutes.GET("/tasks", handlers.GetTasks)
+    protectedRoutes.POST("/tasks", handlers.CreateTask)
+
+    // Admin routes (restricted to admin users)
+    adminRoutes := router.Group("/admin")
+    adminRoutes.Use(middleware.AuthMiddleware("admin"))
+
+    adminRoutes.POST("/users/register", handlers.AdminRegisterUser)
 
     return router
 }
