@@ -30,16 +30,12 @@ Refer to the  [Project Setup](./docs/project_setup.md) section in the original d
     -   All endpoints are protected and require authentication. 
 
 ## Directory Structure 📁
-
-bash
-
-Copy code
-
-`/cmd            - Entry points for the application (main.go).
-/pkg            - Reusable components (authentication, routes, models).
-/config         - Configuration files (environment variables).
-/internal       - Application-specific logic (services, handlers).
-/scripts        - Deployment scripts (Docker, Kubernetes).` 
+-   **cmd**: Contains the main entry point of the application, where the server is started.
+-   **config**: Holds configuration files, including environment variable setups.
+-   **docs**: Includes documentation for project setup and linting instructions.
+-   **internal**: Contains application-specific logic, such as route handlers.
+-   **pkg**: Houses reusable components like middleware, models, and database management.
+-   **scripts**: Contains deployment-related scripts,
 
 ## Technologies Used 💻
 
