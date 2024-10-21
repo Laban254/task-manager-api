@@ -1,10 +1,9 @@
-// /internal/handlers/task.go
 package handlers
 
 import (
+    "errors"
     "net/http"
     "strconv"
-    "errors"
 
     "github.com/gin-gonic/gin"
     "gorm.io/gorm"
@@ -12,12 +11,11 @@ import (
     "task_management_api/pkg/models"
 )
 
-
 type TaskResponse struct {
     BaseResponse
-    Title     string `json:"title"`
-    Status    string `json:"status"`
-    ProjectID uint   `json:"project_id"`
+    Title       string `json:"title"`
+    Status      string `json:"status"`
+    ProjectID   uint   `json:"project_id"`
     Description string `json:"description"`
 }
 
@@ -28,11 +26,24 @@ func BuildTaskResponse(task models.Task) TaskResponse {
             CreatedAt: task.CreatedAt,
             UpdatedAt: task.UpdatedAt,
         },
-        Title:     task.Title,
-        Status:    task.Status,
-        ProjectID: task.ProjectID,
+        Title:       task.Title,
+        Status:      task.Status,
+        ProjectID:   task.ProjectID,
         Description: task.Description,
     }
+}
+
+func validateTask(task *models.Task) error {
+    if task.Title == "" {
+        return errors.New("title is required")
+    }
+    if task.Status == "" {
+        return errors.New("status is required")
+    }
+    if task.ProjectID == 0 {
+        return errors.New("project ID is required")
+    }
+    return nil
 }
 
 func CreateTask(c *gin.Context) {
@@ -42,8 +53,8 @@ func CreateTask(c *gin.Context) {
         return
     }
 
-    if task.ProjectID == 0 {
-        c.JSON(http.StatusBadRequest, gin.H{"error": "Project ID is required"})
+    if validationErr := validateTask(&task); validationErr != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": validationErr.Error()})
         return
     }
 
@@ -123,9 +134,14 @@ func UpdateTask(c *gin.Context) {
         return
     }
 
+    if validationErr := validateTask(&updatedTask); validationErr != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": validationErr.Error()})
+        return
+    }
+
     existingTask.Title = updatedTask.Title
     existingTask.Status = updatedTask.Status
-    existingTask.Description =updatedTask.Description
+    existingTask.Description = updatedTask.Description
 
     if err := database.DB.Save(&existingTask).Error; err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update task"})

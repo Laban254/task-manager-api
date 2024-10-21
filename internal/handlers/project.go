@@ -1,19 +1,19 @@
 package handlers
 
 import (
-    "net/http"
     "errors"
+    "net/http"
 
     "github.com/gin-gonic/gin"
+    "gorm.io/gorm"
     "task_management_api/pkg/database"
     "task_management_api/pkg/models"
-    "gorm.io/gorm"
 )
 
 type ProjectResponse struct {
     BaseResponse
-    Name   string `json:"name"`
-    UserID uint   `json:"user_id"`
+    Name        string `json:"name"`
+    UserID      uint   `json:"user_id"`
     Description string `json:"description"`
 }
 
@@ -24,21 +24,40 @@ func BuildProjectResponse(project models.Project) ProjectResponse {
             CreatedAt: project.CreatedAt,
             UpdatedAt: project.UpdatedAt,
         },
-        Name:   project.Name,
-        UserID: project.UserID,
+        Name:        project.Name,
+        UserID:      project.UserID,
         Description: project.Description,
     }
+}
+
+func validateProject(project *models.Project) error {
+    if project.Name == "" {
+        return errors.New("name is required")
+    }
+    if project.Description == "" {
+        return errors.New("description is required")
+    }
+    return nil
 }
 
 func CreateProject(c *gin.Context) {
     var project models.Project
     if err := c.ShouldBindJSON(&project); err != nil {
-        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload: " + err.Error()})
         return
     }
 
-    userID, _ := c.Get("userID")
+    userID, exists := c.Get("userID")
+    if !exists {
+        c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+        return
+    }
     project.UserID = userID.(uint)
+
+    if validationErr := validateProject(&project); validationErr != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": validationErr.Error()})
+        return
+    }
 
     if err := database.DB.Create(&project).Error; err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create project"})
@@ -46,13 +65,17 @@ func CreateProject(c *gin.Context) {
     }
 
     response := BuildProjectResponse(project)
-    c.JSON(http.StatusOK, response)
+    c.JSON(http.StatusCreated, response)
 }
 
 func GetProjects(c *gin.Context) {
-    userID, _ := c.Get("userID")
-    var projects []models.Project
+    userID, exists := c.Get("userID")
+    if !exists {
+        c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+        return
+    }
 
+    var projects []models.Project
     if err := database.DB.Where("user_id = ?", userID).Find(&projects).Error; err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve projects"})
         return
@@ -68,9 +91,8 @@ func GetProjects(c *gin.Context) {
 
 func UpdateProject(c *gin.Context) {
     var updatedProject models.Project
-
     if err := c.ShouldBindJSON(&updatedProject); err != nil {
-        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload: " + err.Error()})
         return
     }
 
@@ -80,7 +102,7 @@ func UpdateProject(c *gin.Context) {
         return
     }
 
-    userIDUint, ok := userID.(uint) 
+    userIDUint, ok := userID.(uint)
     if !ok {
         c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID type"})
         return
@@ -102,6 +124,11 @@ func UpdateProject(c *gin.Context) {
     }
     if updatedProject.Description != "" {
         existingProject.Description = updatedProject.Description
+    }
+
+    if validationErr := validateProject(&existingProject); validationErr != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": validationErr.Error()})
+        return
     }
 
     if err := database.DB.Save(&existingProject).Error; err != nil {
