@@ -48,7 +48,7 @@ Refer to the  [Project Setup](./docs/project_setup.md) section in the original d
 ## Directory Structure 📁
 -   **cmd**: Contains the main entry point of the application, where the server is started.
 -   **config**: Holds configuration files, including environment variable setups.
--   **docs**: Includes documentation for project setup and linting instructions.
+-   **docs**: Includes projects documentation 
 -   **internal**: Contains application-specific logic, such as route handlers.
 -   **pkg**: Houses reusable components like middleware, models, and database management.
 -   **scripts**: Contains deployment-related scripts,
