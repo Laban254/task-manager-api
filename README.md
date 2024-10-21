@@ -44,4 +44,5 @@ Refer to the  [Project Setup](./docs/project_setup.md) section in the original d
 -   **GORM**: ORM for interacting with the database.
 -   **PostgreSQL**: Database for storing user and project data.
 -   **JWT**: For user authentication and session management.
+-   **OAuth 2.0**: For Google authentication.
 
