@@ -40,7 +40,7 @@ Refer to the  [Project Setup](./docs/project_setup.md) section in the original d
     -   Ensures incoming data is validated and errors are handled gracefully.
 -   **Middleware Support**:
     
-    -   Integrated middleware for logging, CORS handling, Rate limiting, and request parsing.
+    -   Integrated middleware for logging, CORS handling, and request parsing.
     -   Custom middleware for JWT validation and rate-limiting.
 -   **Secure Communication**:
     -   All endpoints are protected and require authentication.
