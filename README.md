@@ -8,26 +8,42 @@ Getting Started 🛠️
 Refer to the  [Project Setup](./docs/project_setup.md) section in the original documentation for instructions on setting up the environment and dependencies.
 
 ## Features ⚙️
-
 -   **User Authentication**:
-    -   Supports JWT-based authentication for secure user sessions. 
-    -   Implements OAuth 2.0 for Google authentication. 
+   
+    -   Supports JWT-based authentication for secure user sessions.
+    -   Implements OAuth 2.0 for Google authentication.
 -   **Role-Based Access Control (RBAC)**:
+ 
     -   Differentiate user roles (admin and regular users) with specific permissions for managing projects and tasks. 👥
 -   **CRUD Operations**:
-    -   Full support for creating, reading, updating, and deleting tasks and projects. 
+    
+    -   Full support for creating, reading, updating, and deleting tasks and projects.
     -   API endpoints include:
-        -   `/login` - User login and JWT issuance. 
-        -   `/register` - New user registration. 
-        -   `/projects` - Manage projects (create, read, update, delete). 
-        -   `/tasks` - Manage tasks (create, read, update, delete). 
+    
+    ### Authentication 🔑
+    
+    -   `/auth/register` - New user registration.
+    -   `/auth/login` - User login and JWT issuance.
+    -   `/auth/google/login` - Google OAuth login.
+    -   `/auth/google/callback` - Google callback.
+    
+    ### Protected Routes 🛡️
+    
+    -   `/api/projects` - Manage projects (create, read, update, delete).
+    -   `/api/tasks` - Manage tasks (create, read, update, delete).
+    
+    ### Admin Routes 👨‍💼
+    
+    -   `/admin/users/register` - Admin user registration.
 -   **Input Validation and Error Handling**:
-    -   Ensures incoming data is validated and errors are handled gracefully. 
+    
+    -   Ensures incoming data is validated and errors are handled gracefully.
 -   **Middleware Support**:
-    -   Integrated middleware for logging, CORS handling, and request parsing. 
-    -   Custom middleware for JWT validation and rate-limiting. 
+    
+    -   Integrated middleware for logging, CORS handling, and request parsing.
+    -   Custom middleware for JWT validation and rate-limiting.
 -   **Secure Communication**:
-    -   All endpoints are protected and require authentication. 
+    -   All endpoints are protected and require authentication.
 
 ## Directory Structure 📁
 -   **cmd**: Contains the main entry point of the application, where the server is started.
