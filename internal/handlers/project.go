@@ -3,10 +3,12 @@ package handlers
 import (
     "net/http"
     "time"
+    "errors"
 
     "github.com/gin-gonic/gin"
     "task_management_api/pkg/database"
     "task_management_api/pkg/models"
+    "gorm.io/gorm"
 )
 
 type BaseResponse struct {
@@ -72,29 +74,65 @@ func GetProjects(c *gin.Context) {
 }
 
 func UpdateProject(c *gin.Context) {
-    var project models.Project
-    if err := c.ShouldBindJSON(&project); err != nil {
+    var updatedProject models.Project
+
+    if err := c.ShouldBindJSON(&updatedProject); err != nil {
         c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
         return
     }
 
-    if err := database.DB.First(&project, c.Param("id")).Error; err != nil {
+    userID, exists := c.Get("userID")
+    if !exists {
+        c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+        return
+    }
+
+    userIDUint, ok := userID.(uint) 
+    if !ok {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID type"})
+        return
+    }
+
+    var existingProject models.Project
+    if err := database.DB.First(&existingProject, c.Param("id")).Error; err != nil {
         c.JSON(http.StatusNotFound, gin.H{"error": "Project not found"})
         return
     }
 
-    if err := database.DB.Save(&project).Error; err != nil {
+    if existingProject.UserID != userIDUint {
+        c.JSON(http.StatusForbidden, gin.H{"error": "You are not authorized to update this project"})
+        return
+    }
+
+    if updatedProject.Name != "" {
+        existingProject.Name = updatedProject.Name
+    }
+    if updatedProject.Description != "" {
+        existingProject.Description = updatedProject.Description
+    }
+
+    if err := database.DB.Save(&existingProject).Error; err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update project"})
         return
     }
 
-    response := BuildProjectResponse(project)
+    response := BuildProjectResponse(existingProject)
     c.JSON(http.StatusOK, response)
 }
 
 func DeleteProject(c *gin.Context) {
     var project models.Project
-    if err := database.DB.Where("id = ?", c.Param("id")).Delete(&project).Error; err != nil {
+
+    if err := database.DB.First(&project, c.Param("id")).Error; err != nil {
+        if errors.Is(err, gorm.ErrRecordNotFound) {
+            c.JSON(http.StatusNotFound, gin.H{"error": "Project not found"})
+            return
+        }
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve project"})
+        return
+    }
+
+    if err := database.DB.Delete(&project).Error; err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete project"})
         return
     }
