@@ -14,6 +14,7 @@ func SetupRouter() *gin.Engine {
     // Middleware
     router.Use(middleware.Logger())
     router.Use(middleware.Recovery())
+    router.Use(middleware.NewRateLimiter())
 
     // Auth routes (not protected)
     setupAuthRoutes(router)
