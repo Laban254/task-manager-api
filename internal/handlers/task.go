@@ -3,15 +3,53 @@ package handlers
 
 import (
     "net/http"
+    "strconv"
+    "errors"
+
     "github.com/gin-gonic/gin"
+    "gorm.io/gorm"
     "task_management_api/pkg/database"
     "task_management_api/pkg/models"
 )
 
+
+type TaskResponse struct {
+    BaseResponse
+    Title     string `json:"title"`
+    Status    string `json:"status"`
+    ProjectID uint   `json:"project_id"`
+    Description string `json:"description"`
+}
+
+func BuildTaskResponse(task models.Task) TaskResponse {
+    return TaskResponse{
+        BaseResponse: BaseResponse{
+            ID:        task.ID,
+            CreatedAt: task.CreatedAt,
+            UpdatedAt: task.UpdatedAt,
+        },
+        Title:     task.Title,
+        Status:    task.Status,
+        ProjectID: task.ProjectID,
+        Description: task.Description,
+    }
+}
+
 func CreateTask(c *gin.Context) {
     var task models.Task
     if err := c.ShouldBindJSON(&task); err != nil {
-        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload: " + err.Error()})
+        return
+    }
+
+    if task.ProjectID == 0 {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Project ID is required"})
+        return
+    }
+
+    var project models.Project
+    if err := database.DB.First(&project, task.ProjectID).Error; err != nil {
+        c.JSON(http.StatusNotFound, gin.H{"error": "Project not found"})
         return
     }
 
@@ -20,39 +58,103 @@ func CreateTask(c *gin.Context) {
         return
     }
 
-    c.JSON(http.StatusOK, task)
+    c.JSON(http.StatusCreated, BuildTaskResponse(task))
 }
 
 func GetTasks(c *gin.Context) {
     var tasks []models.Task
     projectID := c.Param("projectID")
 
-    if err := database.DB.Where("project_id = ?", projectID).Find(&tasks).Error; err != nil {
+    pid, err := strconv.ParseUint(projectID, 10, 32)
+    if err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid project ID"})
+        return
+    }
+
+    if err := database.DB.Where("project_id = ?", pid).Find(&tasks).Error; err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve tasks"})
         return
     }
 
-    c.JSON(http.StatusOK, tasks)
+    response := make([]TaskResponse, len(tasks))
+    for i, task := range tasks {
+        response[i] = BuildTaskResponse(task)
+    }
+
+    c.JSON(http.StatusOK, response)
 }
 
-func UpdateTask(c *gin.Context) {
+func GetTask(c *gin.Context) {
     var task models.Task
-    if err := c.ShouldBindJSON(&task); err != nil {
-        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+    taskID := c.Param("id")
+
+    tid, err := strconv.ParseUint(taskID, 10, 32)
+    if err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid task ID"})
         return
     }
 
-    if err := database.DB.Save(&task).Error; err != nil {
+    if err := database.DB.First(&task, tid).Error; err != nil {
+        c.JSON(http.StatusNotFound, gin.H{"error": "Task not found"})
+        return
+    }
+
+    c.JSON(http.StatusOK, BuildTaskResponse(task))
+}
+
+func UpdateTask(c *gin.Context) {
+    var existingTask models.Task
+    taskID := c.Param("id")
+
+    tid, err := strconv.ParseUint(taskID, 10, 32)
+    if err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid task ID"})
+        return
+    }
+
+    if err := database.DB.First(&existingTask, tid).Error; err != nil {
+        c.JSON(http.StatusNotFound, gin.H{"error": "Task not found"})
+        return
+    }
+
+    var updatedTask models.Task
+    if err := c.ShouldBindJSON(&updatedTask); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload: " + err.Error()})
+        return
+    }
+
+    existingTask.Title = updatedTask.Title
+    existingTask.Status = updatedTask.Status
+    existingTask.Description =updatedTask.Description
+
+    if err := database.DB.Save(&existingTask).Error; err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update task"})
         return
     }
 
-    c.JSON(http.StatusOK, task)
+    c.JSON(http.StatusOK, BuildTaskResponse(existingTask))
 }
 
 func DeleteTask(c *gin.Context) {
+    taskID := c.Param("id")
+
+    tid, err := strconv.ParseUint(taskID, 10, 32)
+    if err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid task ID"})
+        return
+    }
+
     var task models.Task
-    if err := database.DB.Where("id = ?", c.Param("id")).Delete(&task).Error; err != nil {
+    if err := database.DB.First(&task, tid).Error; err != nil {
+        if errors.Is(err, gorm.ErrRecordNotFound) {
+            c.JSON(http.StatusNotFound, gin.H{"error": "Task not found"})
+            return
+        }
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve task"})
+        return
+    }
+
+    if err := database.DB.Delete(&task).Error; err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete task"})
         return
     }

@@ -2,7 +2,6 @@ package handlers
 
 import (
     "net/http"
-    "time"
     "errors"
 
     "github.com/gin-gonic/gin"
@@ -10,12 +9,6 @@ import (
     "task_management_api/pkg/models"
     "gorm.io/gorm"
 )
-
-type BaseResponse struct {
-    ID        uint      `json:"id"`
-    CreatedAt time.Time `json:"created_at"`
-    UpdatedAt time.Time `json:"updated_at"`
-}
 
 type ProjectResponse struct {
     BaseResponse
