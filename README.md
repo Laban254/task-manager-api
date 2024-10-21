@@ -4,7 +4,8 @@
 
 The Task Management API is a RESTful API built using the Gin framework in Go. It provides a robust backend for managing tasks and projects, featuring user authentication, role-based access control, and integration with Google OAuth for enhanced security and user experience.
 
-Getting Started 🛠️
+## Getting Started 🛠️
+
 Refer to the  [Project Setup](./docs/project_setup.md) section in the original documentation for instructions on setting up the environment and dependencies.
 
 ## Features ⚙️
